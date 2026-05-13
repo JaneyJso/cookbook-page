@@ -121,6 +121,31 @@
             </view>
           </view>
         </view>
+
+        <!-- 调味料推荐 -->
+        <view class="seasonal-recommend seasoning-recommend">
+          <view class="seasonal-header">
+            <text class="seasonal-title">🧂 调味料</text>
+            <text class="seasonal-toggle" @click="showSeasoning = !showSeasoning">{{ showSeasoning ? '收起' : '展开' }}</text>
+          </view>
+          <view v-if="showSeasoning" class="seasonal-body">
+            <view v-for="group in SEASONING_INGREDIENTS" :key="group.category" class="seasonal-group">
+              <text class="seasonal-group-title">{{ group.category }}</text>
+              <view class="seasonal-tags">
+                <view
+                  v-for="item in group.items"
+                  :key="item"
+                  class="seasonal-tag seasoning-tag"
+                  :class="{ selected: form.ingredients.includes(item) }"
+                  @click="addSeasonalIngredient(item)"
+                >
+                  + {{ item }}
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+
         <view
           v-for="(item, index) in form.ingredients"
           :key="index"
@@ -241,7 +266,7 @@ import { onLoad } from '@dcloudio/uni-app'
 import type { Recipe, Season } from '@/types/recipe'
 import { getRecipeById, createRecipe, updateRecipe } from '@/services/recipe'
 import { getAllSeasons, getSeasonColor, getSeasonEmoji } from '@/utils/season'
-import { RECIPE_TAGS, DEFAULT_CONDITION_TAGS, SEASONAL_INGREDIENTS, ALL_YEAR_INGREDIENTS, CONDITION_INGREDIENTS } from '@/constants/tags'
+import { RECIPE_TAGS, DEFAULT_CONDITION_TAGS, SEASONAL_INGREDIENTS, ALL_YEAR_INGREDIENTS, CONDITION_INGREDIENTS, SEASONING_INGREDIENTS } from '@/constants/tags'
 import { getCurrentSeason } from '@/utils/season'
 import { getLatestRecord } from '@/services/health'
 
@@ -251,6 +276,7 @@ const currentSeasonLabel = currentSeasonForRecommend + '季'
 const seasonalIngredients = SEASONAL_INGREDIENTS[currentSeasonForRecommend]
 const showSeasonal = ref(false)
 const showAllYear = ref(false)
+const showSeasoning = ref(false)
 const showConditionRecommend = ref(false)
 
 // 根据身体状况推荐食材
@@ -686,6 +712,22 @@ function goBack() {
 
 .all-year-recommend {
   background-color: #E3F2FD;
+}
+
+.seasoning-recommend {
+  background-color: #FFF8E1;
+}
+
+.seasoning-tag {
+  color: #795548;
+  background-color: #EFEBE9;
+  border-color: #D7CCC8;
+}
+
+.seasoning-tag.selected {
+  background-color: #795548;
+  color: #fff;
+  border-color: #795548;
 }
 
 .condition-recommend {

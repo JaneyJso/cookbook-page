@@ -41,4 +41,14 @@ uni-page-body {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
+
+/* H5端 tabBar 文字自适应 */
+.uni-tabbar__label {
+  font-size: 24rpx !important;
+}
+
+.uni-tabbar__icon {
+  width: 50rpx !important;
+  height: 50rpx !important;
+}
 </style>
