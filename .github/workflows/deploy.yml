@@ -26,5 +26,5 @@ jobs:
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist  # 指向打包目录
+          publish_dir: ./dist/build/h5  # 指向打包目录
           publish_branch: gh-pages  # 目标分支
