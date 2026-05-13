@@ -1,0 +1,1 @@
+function n(){const n=(new Date).getMonth()+1;return n>=3&&n<=5?"春":n>=6&&n<=8?"夏":n>=9&&n<=11?"秋":"冬"}function t(n){return{"春":"#4CAF50","夏":"#FF9800","秋":"#FFC107","冬":"#2196F3"}[n]}function r(n){return{"春":"🌸","夏":"☀️","秋":"🍂","冬":"❄️"}[n]}function e(){return["春","夏","秋","冬"]}export{r as a,t as b,e as c,n as g};
