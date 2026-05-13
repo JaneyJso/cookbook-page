@@ -1,0 +1,40 @@
+{
+  "name": "eat-recipe",
+  "appid": "__UNI__EATRECIPE",
+  "description": "食之有道 - 健康饮食与菜谱管理",
+  "versionName": "1.0.0",
+  "versionCode": "100",
+  "transformPx": false,
+  "app-plus": {
+    "usingComponents": true,
+    "nvueStyleCompiler": "uni-app",
+    "compilerVersion": 3,
+    "splashscreen": {
+      "alwaysShowBeforeRender": true,
+      "waiting": true,
+      "autoclose": true,
+      "delay": 0
+    },
+    "modules": {},
+    "distribute": {
+      "android": {
+        "permissions": []
+      },
+      "ios": {},
+      "sdkConfigs": {}
+    }
+  },
+  "h5": {
+    "title": "食之有道",
+    "router": {
+      "mode": "hash"
+    }
+  },
+  "mp-weixin": {
+    "appid": "wx_placeholder_appid",
+    "setting": {
+      "urlCheck": false
+    },
+    "usingComponents": true
+  }
+}
