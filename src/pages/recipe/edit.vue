@@ -151,6 +151,14 @@
           :key="index"
           class="ingredient-row"
         >
+          <view class="ingredient-sort-btns">
+            <view class="sort-btn" :class="{ disabled: index === 0 }" @click="moveIngredient(index, -1)">
+              <text class="sort-icon">↑</text>
+            </view>
+            <view class="sort-btn" :class="{ disabled: index === form.ingredients.length - 1 }" @click="moveIngredient(index, 1)">
+              <text class="sort-icon">↓</text>
+            </view>
+          </view>
           <input
             class="ingredient-input"
             v-model="form.ingredients[index]"
@@ -165,9 +173,15 @@
             <text class="remove-icon">−</text>
           </view>
         </view>
-        <view class="add-btn ingredient-add" @click="addIngredient">
-          <text class="add-icon">+</text>
-          <text class="add-text">添加食材</text>
+        <view class="ingredient-actions">
+          <view class="add-btn ingredient-add" @click="addIngredient">
+            <text class="add-icon">+</text>
+            <text class="add-text">添加食材</text>
+          </view>
+          <view class="add-btn ingredient-to-steps" @click="addIngredientsToSteps">
+            <text class="add-icon">📋</text>
+            <text class="add-text">添加到步骤</text>
+          </view>
         </view>
       </view>
 
@@ -211,22 +225,28 @@
       <!-- 自定义标签 -->
       <view class="form-group">
         <view class="form-label">自定义标签</view>
-        <view class="tag-options">
-          <view
-            v-for="tag in RECIPE_TAGS"
-            :key="tag"
-            class="option-tag gray"
-            :class="{ active: form.tags.includes(tag) }"
-            @click="toggleTag(tag)"
-          >
-            {{ tag }}
+        <!-- 历史标签选项 -->
+        <view v-if="historyTags.length > 0" class="history-tags-section">
+          <text class="history-tags-label">历史标签（点击选用，长按删除）</text>
+          <view class="history-tags-row">
+            <view
+              v-for="tag in historyTags"
+              :key="tag"
+              class="option-tag gray history-tag"
+              :class="{ active: form.tags.includes(tag) }"
+              @click="selectHistoryTag(tag)"
+              @longpress="deleteHistoryTag(tag)"
+            >
+              {{ tag }}
+            </view>
           </view>
         </view>
+        <!-- 输入添加新标签 -->
         <view class="custom-tag-input-row">
           <input
             class="custom-tag-input"
             v-model="customTagInput"
-            placeholder="添加自定义标签"
+            placeholder="输入新标签名称"
             placeholder-class="input-placeholder"
             @confirm="addCustomTag"
           />
@@ -234,15 +254,18 @@
             <text>添加</text>
           </view>
         </view>
-        <view v-if="extraCustomTags.length > 0" class="custom-tags-row">
-          <view
-            v-for="tag in extraCustomTags"
-            :key="tag"
-            class="option-tag gray active custom-active"
-            @click="toggleTag(tag)"
-          >
-            {{ tag }}
-            <text class="tag-close">×</text>
+        <!-- 当前菜谱已选标签 -->
+        <view v-if="form.tags.length > 0" class="custom-tags-row">
+          <view class="selected-tags-label">当前已选：</view>
+          <view class="selected-tags-list">
+            <view
+              v-for="tag in form.tags"
+              :key="tag"
+              class="option-tag gray active custom-active"
+            >
+              {{ tag }}
+              <text class="tag-close" @click="removeTag(tag)">×</text>
+            </view>
           </view>
         </view>
       </view>
@@ -266,9 +289,10 @@ import { onLoad } from '@dcloudio/uni-app'
 import type { Recipe, Season } from '@/types/recipe'
 import { getRecipeById, createRecipe, updateRecipe } from '@/services/recipe'
 import { getAllSeasons, getSeasonColor, getSeasonEmoji } from '@/utils/season'
-import { RECIPE_TAGS, DEFAULT_CONDITION_TAGS, SEASONAL_INGREDIENTS, ALL_YEAR_INGREDIENTS, CONDITION_INGREDIENTS, SEASONING_INGREDIENTS } from '@/constants/tags'
+import { DEFAULT_CONDITION_TAGS, SEASONAL_INGREDIENTS, ALL_YEAR_INGREDIENTS, CONDITION_INGREDIENTS, SEASONING_INGREDIENTS } from '@/constants/tags'
 import { getCurrentSeason } from '@/utils/season'
 import { getLatestRecord } from '@/services/health'
+import { getStorage, setStorage, STORAGE_KEYS } from '@/utils/storage'
 
 const allSeasons = getAllSeasons()
 const currentSeasonForRecommend = getCurrentSeason()
@@ -331,11 +355,7 @@ const form = ref({
 })
 
 const customTagInput = ref('')
-
-// 额外自定义标签 = 已选中的 tags 中不在预置列表里的
-const extraCustomTags = computed(() => {
-  return form.value.tags.filter(t => !RECIPE_TAGS.includes(t))
-})
+const historyTags = ref<string[]>(getStorage<string[]>(STORAGE_KEYS.CUSTOM_TAGS, []))
 
 onLoad((options) => {
   if (options?.id) {
@@ -440,6 +460,29 @@ function removeIngredient(index: number) {
   }
 }
 
+function moveIngredient(index: number, direction: number) {
+  const newIndex = index + direction
+  if (newIndex < 0 || newIndex >= form.value.ingredients.length) return
+  const temp = form.value.ingredients[index]
+  form.value.ingredients[index] = form.value.ingredients[newIndex]
+  form.value.ingredients[newIndex] = temp
+}
+
+function addIngredientsToSteps() {
+  const validIngredients = form.value.ingredients.filter((i: string) => i.trim() !== '')
+  if (validIngredients.length === 0) {
+    uni.showToast({ title: '没有可添加的食材', icon: 'none' })
+    return
+  }
+  const ingredientText = validIngredients.join('、')
+  if (form.value.steps) {
+    form.value.steps = ingredientText + '\n' + form.value.steps
+  } else {
+    form.value.steps = ingredientText
+  }
+  uni.showToast({ title: '已添加到烹饪步骤', icon: 'none' })
+}
+
 function toggleSeason(season: Season) {
   const idx = form.value.seasons.indexOf(season)
   if (idx > -1) {
@@ -462,12 +505,10 @@ function toggleAllSeasons() {
   }
 }
 
-function toggleTag(tag: string) {
+function removeTag(tag: string) {
   const idx = form.value.tags.indexOf(tag)
   if (idx > -1) {
     form.value.tags.splice(idx, 1)
-  } else {
-    form.value.tags.push(tag)
   }
 }
 
@@ -477,7 +518,35 @@ function addCustomTag() {
   if (!form.value.tags.includes(val)) {
     form.value.tags.push(val)
   }
+  // 保存到历史标签
+  if (!historyTags.value.includes(val)) {
+    historyTags.value.push(val)
+    setStorage(STORAGE_KEYS.CUSTOM_TAGS, historyTags.value)
+  }
   customTagInput.value = ''
+}
+
+function selectHistoryTag(tag: string) {
+  if (form.value.tags.includes(tag)) {
+    // 已选中则取消
+    const idx = form.value.tags.indexOf(tag)
+    form.value.tags.splice(idx, 1)
+  } else {
+    form.value.tags.push(tag)
+  }
+}
+
+function deleteHistoryTag(tag: string) {
+  const idx = historyTags.value.indexOf(tag)
+  if (idx > -1) {
+    historyTags.value.splice(idx, 1)
+    setStorage(STORAGE_KEYS.CUSTOM_TAGS, historyTags.value)
+  }
+  // 同时从当前菜谱移除
+  const formIdx = form.value.tags.indexOf(tag)
+  if (formIdx > -1) {
+    form.value.tags.splice(formIdx, 1)
+  }
 }
 
 function validate(): boolean {
@@ -790,6 +859,42 @@ function goBack() {
   margin-bottom: 16rpx;
 }
 
+.ingredient-sort-btns {
+  display: flex;
+  flex-direction: column;
+  margin-right: 12rpx;
+  gap: 4rpx;
+}
+
+.sort-btn {
+  width: 40rpx;
+  height: 36rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f0f0f0;
+  border-radius: 8rpx;
+}
+
+.sort-btn.disabled {
+  opacity: 0.3;
+}
+
+.sort-icon {
+  font-size: 22rpx;
+  color: #666;
+}
+
+.ingredient-actions {
+  display: flex;
+  gap: 20rpx;
+}
+
+.ingredient-to-steps {
+  background-color: #E3F2FD;
+  color: #1976D2;
+}
+
 .ingredient-input {
   flex: 1;
   height: 76rpx;
@@ -957,6 +1062,51 @@ function goBack() {
   flex-wrap: wrap;
   gap: 16rpx;
   margin-top: 16rpx;
+}
+
+.tag-empty-tip {
+  margin-top: 16rpx;
+  font-size: 24rpx;
+  color: #bbb;
+}
+
+.history-tags-section {
+  margin-bottom: 16rpx;
+}
+
+.history-tags-label {
+  font-size: 22rpx;
+  color: #999;
+  margin-bottom: 12rpx;
+  display: block;
+}
+
+.history-tags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.history-tag {
+  border: 2rpx solid #e0e0e0;
+}
+
+.history-tag.active {
+  background-color: #4CAF50;
+  color: #fff;
+  border-color: #4CAF50;
+}
+
+.selected-tags-label {
+  font-size: 24rpx;
+  color: #666;
+  margin-bottom: 10rpx;
+}
+
+.selected-tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
 }
 
 /* 底部按钮 */
