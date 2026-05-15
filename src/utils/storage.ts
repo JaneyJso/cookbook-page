@@ -3,6 +3,7 @@ export const STORAGE_KEYS = {
   HEALTH_RECORDS: 'health_records',
   CUSTOM_CONDITION_TAGS: 'custom_condition_tags',
   CUSTOM_TAGS: 'custom_tags',
+  CUSTOM_CONDITION_INGREDIENTS: 'custom_condition_ingredients',
 } as const
 
 export function getStorage<T>(key: string, defaultValue: T): T {
