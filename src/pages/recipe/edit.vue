@@ -225,6 +225,21 @@
       <!-- 自定义标签 -->
       <view class="form-group">
         <view class="form-label">自定义标签</view>
+        <!-- 预置标签选项 -->
+        <view class="history-tags-section">
+          <text class="history-tags-label">快捷标签</text>
+          <view class="history-tags-row">
+            <view
+              v-for="tag in RECIPE_TAGS"
+              :key="'preset-' + tag"
+              class="option-tag gray history-tag"
+              :class="{ active: form.tags.includes(tag) }"
+              @click="selectHistoryTag(tag)"
+            >
+              {{ tag }}
+            </view>
+          </view>
+        </view>
         <!-- 历史标签选项 -->
         <view v-if="historyTags.length > 0" class="history-tags-section">
           <text class="history-tags-label">历史标签（点击选用，长按删除）</text>
@@ -289,7 +304,7 @@ import { onLoad } from '@dcloudio/uni-app'
 import type { Recipe, Season } from '@/types/recipe'
 import { getRecipeById, createRecipe, updateRecipe } from '@/services/recipe'
 import { getAllSeasons, getSeasonColor, getSeasonEmoji } from '@/utils/season'
-import { DEFAULT_CONDITION_TAGS, SEASONAL_INGREDIENTS, ALL_YEAR_INGREDIENTS, CONDITION_INGREDIENTS, SEASONING_INGREDIENTS } from '@/constants/tags'
+import { RECIPE_TAGS, DEFAULT_CONDITION_TAGS, SEASONAL_INGREDIENTS, ALL_YEAR_INGREDIENTS, CONDITION_INGREDIENTS, SEASONING_INGREDIENTS } from '@/constants/tags'
 import { getCurrentSeason } from '@/utils/season'
 import { getLatestRecord } from '@/services/health'
 import { getStorage, setStorage, STORAGE_KEYS } from '@/utils/storage'
@@ -305,7 +320,7 @@ const showConditionRecommend = ref(false)
 
 // 根据身体状况推荐食材
 const latestHealth = getLatestRecord()
-const availableConditionsForRecommend = ['健康', ...DEFAULT_CONDITION_TAGS]
+const availableConditionsForRecommend = ['健康', ...DEFAULT_CONDITION_TAGS, ...getStorage<string[]>(STORAGE_KEYS.CUSTOM_CONDITION_TAGS, []).filter((t: string) => !DEFAULT_CONDITION_TAGS.includes(t))]
 const selectedConditionsForRecommend = ref<string[]>(
   latestHealth ? [...latestHealth.conditions] : ['健康']
 )
@@ -328,14 +343,16 @@ function toggleRecommendCondition(tag: string) {
   }
 }
 
+// 读取自定义身体状况食材映射
+const customConditionIngredients = getStorage<Record<string, string[]>>(STORAGE_KEYS.CUSTOM_CONDITION_INGREDIENTS, {})
+
 const conditionRecommendItems = computed(() => {
   const items: string[] = []
   for (const condition of selectedConditionsForRecommend.value) {
-    const list = CONDITION_INGREDIENTS[condition]
-    if (list) {
-      for (const item of list) {
-        if (!items.includes(item)) items.push(item)
-      }
+    const presetList = CONDITION_INGREDIENTS[condition] || []
+    const customList = customConditionIngredients[condition] || []
+    for (const item of [...presetList, ...customList]) {
+      if (!items.includes(item)) items.push(item)
     }
   }
   return items
